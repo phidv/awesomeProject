@@ -1,0 +1,47 @@
+version: "3.7"
+
+name: gin-demo
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: development
+      args:
+        - GOLANG_VERSION=1.22.12-alpine3.21
+    platform: linux/amd64
+    volumes:
+      - .:/app
+    ports:
+      - ${REST_PORT_FORWARD:-8080}:${REST_PORT:-8080}
+    command: sh -c "air -c ./docker/.air.toml"
+    tty: true
+    stdin_open: true
+
+  postgresql:
+    image: kartoza/postgis
+    platform: linux/amd64
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_DB: ${POSTGRES_DB:-demo}
+    volumes:
+      - postgres:/var/lib/postgresql
+    ports:
+      - ${POSTGRES_PORT_FORWARD:-5432}:5432
+
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-demo@phidv.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-123456789}
+    ports:
+      - ${PGADMIN_PORT_FORWARD:-5050}:80
+
+volumes:
+  postgres:
+
+networks:
+  default:
+    name: gin-demo
